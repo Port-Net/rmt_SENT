@@ -25,6 +25,7 @@ public:
 protected:
   virtual bool processData();
   virtual bool processSerial(uint8_t msg_id, uint16_t msg_data);
+  int8_t _nibbles[7];
 private:
   static IRAM_ATTR bool rtmCallback(rmt_channel_handle_t rx_chan, const rmt_rx_done_event_data_t *edata, void *user_data);
   static void handlerThread(void* parameters);
@@ -44,7 +45,6 @@ private:
   uint32_t _serial_msg_bit2;
   uint32_t _serial_msg_crc;
   uint8_t _status;
-  int8_t _nibbles[7];
   SENT_Error_t _last_error;
   uint32_t _error_count;
   void* _data_callback_user_data;

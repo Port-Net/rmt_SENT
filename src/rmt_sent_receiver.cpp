@@ -9,7 +9,7 @@ RMT_SENT_RECEIVER::RMT_SENT_RECEIVER(gpio_num_t pin, uint8_t tick_time_us) : _ti
   };
   _sent_config = {
     .signal_range_min_ns = 3100,     // longest possible?...
-    .signal_range_max_ns = 3000 * 65 // more than 56 ticks is pause
+    .signal_range_max_ns = 1000U * tick_time_us * 60 // more than 60 ticks is pause (end mark)
   };
   _cbs = {
     .on_recv_done = rtmCallback
