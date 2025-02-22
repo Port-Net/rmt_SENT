@@ -58,6 +58,7 @@ void RMT_SENT_RECEIVER::handlerThread(void* parameters) {
     xQueueReceive(me->_receive_queue, &rx_data, portMAX_DELAY);
     if(!me->decodeSENT(&rx_data)) {
       me->_error_count++;
+      me->_serial_msg_bit3 = 0;
     }
     //vTaskDelay(0);
   }
@@ -126,6 +127,7 @@ bool RMT_SENT_RECEIVER::decodeSENT(rmt_rx_done_event_data_t* rx_data) {
   }
 
   if(!processData()) {
+    _last_error = process_error;
     return false;
   }
 
@@ -175,6 +177,9 @@ bool RMT_SENT_RECEIVER::handleSerialMsg(uint8_t nibble) {
     } else { // 12/8
       msg_id = ((_serial_msg_bit3 >> 2) & 0xF0) | ((_serial_msg_bit3 >> 1) & 0x0F); 
       msg_data = _serial_msg_bit2 & 0xFFF;
+    }
+    if(!processSerial(msg_id, msg_data)) {
+      return false;
     }
     if(_serial_msg_callback) {
       _serial_msg_callback(msg_id, msg_data, _serial_callback_user_data);
