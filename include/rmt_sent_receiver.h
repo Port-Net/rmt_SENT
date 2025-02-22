@@ -14,19 +14,93 @@ public:
     wrong_crc = 4,
     process_error = 5
   };
+  /**
+   * @brief Construct a new rmt sent receiver object
+   * 
+   * @param pin 
+   * @param _tick_time_us 
+   */
   RMT_SENT_RECEIVER(gpio_num_t pin, uint8_t _tick_time_us);
+
+  /**
+   * @brief initialize and start rmt receiver
+   * 
+   * @return true on success
+   * @return false on error
+   */
   bool begin();
+
+  /**
+   * @brief register a callback on frame decoded successful
+   * 
+   * @param callback sig: void func(int8_t* nibbles, void* user_data)
+   * @param user_data optional pointer forwarded to callback
+   */
   void registerDataCallback(void (*callback)(int8_t* nibbles, void* user_data), void* user_data = NULL);
+
+  /**
+   * @brief register a callback on serial message received
+   * 
+   * @param callback sig: void func(uint8_t msg_id, uint16_t msg_data, void* user_data)
+   * @param user_data optional pointer forwarded to callback
+   */
   void registerSerialMsgCallback(void (*callback)(uint8_t msg_id, uint16_t msg_data, void* user_data), void* user_data = NULL);
+  
+  /**
+   * @brief Get the Raw Data object
+   * 
+   * @param nibbles pointer to int8 array[6] to store the data nibbles
+   */
   void getRawData(int8_t* nibbles);
+
+  /**
+   * @brief Get the Status object
+   * 
+   * @return uint8_t 2 bits of status nibble
+   */
   uint8_t getStatus();
+
+  /**
+   * @brief Get the Count of frames with errors 
+   * 
+   * @return uint32_t count
+   */
   uint32_t getErrorCount();
+
+  /**
+   * @brief Get the Packet Count object
+   * 
+   * @return uint32_t count of packets 
+   */
+  uint32_t getPacketCount();
+
+  /**
+   * @brief Get the Last Error
+   * 
+   * @return SENT_Error_t 
+   */
   SENT_Error_t getLastError();
+
+  /**
+   * @brief invalidates the serial channel. use in case of error detected in frame
+   * 
+   */
   void invalidateSerial();
 protected:
+  /**
+   * @brief function which is called each time a valid packet is received
+   * 
+   */
   virtual bool processData();
+
+  /**
+   * @brief function which is called each time a valid serial message is received
+   * 
+   */
   virtual bool processSerial(uint8_t msg_id, uint16_t msg_data);
+
   int8_t _nibbles[7];
+  uint32_t _packet_count;
 private:
   static IRAM_ATTR bool rtmCallback(rmt_channel_handle_t rx_chan, const rmt_rx_done_event_data_t *edata, void *user_data);
   static void handlerThread(void* parameters);
@@ -80,8 +154,11 @@ private:
   bool processData() override {
     uint8_t ct = _nibbles[3] << 4 | _nibbles[4];
     _last_counter++;
+    if(!_packet_count) {
+      _last_counter = ct;
+    }
     if(ct != _last_counter) {
-      _missed_packets++;
+      _missed_packets += ct - _last_counter;
       _last_counter = ct;
       Serial.printf("missed %d\r\n", ct);
     }

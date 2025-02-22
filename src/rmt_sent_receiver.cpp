@@ -16,6 +16,9 @@ RMT_SENT_RECEIVER::RMT_SENT_RECEIVER(gpio_num_t pin, uint8_t tick_time_us) : _ti
   };
   _serial_msg_callback = nullptr;
   _data_callback = nullptr;
+  _packet_count = 0;
+  _error_count = 0;
+  _serial_msg_bit3 = 0;
 }
 
 bool RMT_SENT_RECEIVER::begin() {
@@ -135,6 +138,8 @@ bool RMT_SENT_RECEIVER::decodeSENT(rmt_rx_done_event_data_t* rx_data) {
     _data_callback(_nibbles, _data_callback_user_data);
   }
 
+  _packet_count++;
+
   handleSerialMsg(_status);
   return true;
 }
@@ -205,6 +210,10 @@ RMT_SENT_RECEIVER::SENT_Error_t RMT_SENT_RECEIVER::getLastError() {
 
 uint8_t RMT_SENT_RECEIVER::getStatus() {
   return _status & 0x03;
+}
+
+uint32_t RMT_SENT_RECEIVER::getPacketCount() {
+  return _packet_count;
 }
 
 uint32_t RMT_SENT_RECEIVER::getErrorCount() {
