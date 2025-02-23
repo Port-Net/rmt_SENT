@@ -30,10 +30,10 @@ private:
     if(ct != _last_counter) {
       _missed_packets++;
       _last_counter = ct;
-      Serial.printf("missed %d\r\n", ct);
+      //Serial.printf("missed %d\r\n", ct);
     }
     if((~(_nibbles[0]) & 0x0f) != _nibbles[5]) {
-      Serial.printf("wrong invert %d\r\n", ct);
+      //Serial.printf("wrong invert %d\r\n", ct);
       return false;
     }
     _raw_angle = _nibbles[0] << 8 | _nibbles[1] << 4 | _nibbles[2];
