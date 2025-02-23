@@ -46,7 +46,7 @@ private:
         _serial_status = msg_data;
         break;
       case 0x23:
-        _temperature = msg_data / 8 - 73.15;
+        _temperature = msg_data / 8 - 73; // was 73.15, but seems to be only in 1° steps
         break;
     }
     return true;
@@ -76,9 +76,9 @@ void loop() {
   uint32_t ti = millis();
   if((ti - last_print) > 500) {
     last_print = ti;
-    Serial.printf("state:%d state2:%X angle:%d temp:%.2f°C missed:%d err: %d\r\n",
+    Serial.printf("state:%d state2:%X angle:%d temp:%.2f°C pkt:%d missed:%d err: %d\r\n",
         mlx90377.getStatus(), mlx90377.getSerialStatus(), mlx90377.getRawAngle(), mlx90377.getTemperature(),
-        mlx90377.getMissedPackets(), mlx90377.getErrorCount());
+        mlx90377.getPacketCount(), mlx90377.getMissedPackets(), mlx90377.getErrorCount());
   }
 }
 

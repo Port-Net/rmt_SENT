@@ -160,10 +160,10 @@ private:
     if(ct != _last_counter) {
       _missed_packets += ct - _last_counter;
       _last_counter = ct;
-      Serial.printf("missed %d\r\n", ct);
+      //Serial.printf("missed %d\r\n", ct);
     }
     if((~(_nibbles[0]) & 0x0f) != _nibbles[5]) {
-      Serial.printf("wrong invert %d\r\n", ct);
+      //Serial.printf("wrong invert %d\r\n", ct);
       return false;
     }
     _raw_angle = _nibbles[0] << 8 | _nibbles[1] << 4 | _nibbles[2];
@@ -176,7 +176,7 @@ private:
         _serial_status = msg_data;
         break;
       case 0x23:
-        _temperature = msg_data / 8 - 73.15;
+        _temperature = msg_data / 8 - 73; // was 73.15, but seems to be only in 1° steps
         break;
     }
     return true;

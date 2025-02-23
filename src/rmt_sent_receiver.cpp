@@ -96,12 +96,12 @@ bool RMT_SENT_RECEIVER::decodeSENT(rmt_rx_done_event_data_t* rx_data) {
   uint16_t ticks = round((float)(d->duration0 + d->duration1) / _tick_time_us);
   if(rx_data->num_symbols < 9) {
     _last_error = short_frame;
-    Serial.println("short frame");
+    //Serial.println("short frame");
     return false;
   }
   if((ticks < 55) || (ticks > 57)) {
     _last_error = wrong_start;
-    Serial.println("wrong start");
+    //Serial.println("wrong start");
     return false;
   }
 
@@ -109,7 +109,7 @@ bool RMT_SENT_RECEIVER::decodeSENT(rmt_rx_done_event_data_t* rx_data) {
   _status = round((float)(d->duration0 + d->duration1) / _tick_time_us) - 12;
   if((_status < 0) || (_status > 15)) {
     _last_error = wrong_nibble;
-    Serial.println("wrong nibble1");
+    //Serial.println("wrong nibble1");
     return false;
   }
 
@@ -118,14 +118,14 @@ bool RMT_SENT_RECEIVER::decodeSENT(rmt_rx_done_event_data_t* rx_data) {
     _nibbles[i] = round((float)(d->duration0 + d->duration1) / _tick_time_us) - 12;
     if((_nibbles[i] < 0) || (_nibbles[i] > 15)) {
       _last_error = wrong_nibble;
-      Serial.println("wrong nibble");
+      //Serial.println("wrong nibble");
       return false;
     }
   }
 
   if(calcCRC4(_nibbles, 6) != _nibbles[6]) {
     _last_error = wrong_crc;
-    Serial.println("wrong crc");
+    //Serial.println("wrong crc");
     return false;
   }
 
@@ -157,7 +157,7 @@ bool RMT_SENT_RECEIVER::handleSerialMsg(uint8_t nibble) {
     n[1] = (_serial_msg_bit2 >> 8)  & 0x0F;
     n[2] = (_serial_msg_bit2 >> 4)  & 0x0F;
     if(calcCRC4(n, 3) != (_serial_msg_bit2 & 0x0F)) {
-      Serial.println("short serial crc wrong");
+      //Serial.println("short serial crc wrong");
       return false;
     }
     uint8_t msg_id = n[0];
@@ -170,7 +170,7 @@ bool RMT_SENT_RECEIVER::handleSerialMsg(uint8_t nibble) {
     }
   } else if((_serial_msg_bit3 & 0x3f800) == 0x3f000) {
     if(!checkCRC6(_serial_msg_crc, (_serial_msg_bit2 >> 12) & 0x3f)) {
-      Serial.println("serial crc wrong");
+      //Serial.println("serial crc wrong");
       return false;
     }
     uint8_t msg_id;

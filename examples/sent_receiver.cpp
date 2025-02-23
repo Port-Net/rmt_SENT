@@ -35,7 +35,7 @@ void serialMsgCallback(uint8_t msg_id, uint16_t msg_data, void* userData) {
       serial_status = msg_data;
       break;
     case 0x23:
-      temp = msg_data / 8 - 73.15;
+      temp = msg_data / 8 - 73; // was 73.15, but seems to be only in 1° steps
       break;
   }
 }
