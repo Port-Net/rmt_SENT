@@ -18,9 +18,9 @@ public:
    * @brief Construct a new rmt sent receiver object
    * 
    * @param pin 
-   * @param _tick_time_us 
+   * @param tick_time_us 
    */
-  RMT_SENT_RECEIVER(gpio_num_t pin, uint8_t _tick_time_us);
+  RMT_SENT_RECEIVER(gpio_num_t pin, uint8_t tick_time_us);
 
   /**
    * @brief initialize and start rmt receiver
@@ -126,67 +126,6 @@ private:
   void (*_data_callback)(int8_t* nibbles, void* user_data);
   void* _serial_callback_user_data;
   void (*_serial_msg_callback)(uint8_t msg_id, uint16_t msg_data, void* user_data);
-};
-
-class MLX90377 : public RMT_SENT_RECEIVER {
-public:
-  MLX90377(gpio_num_t pin, uint8_t tick_time_us) : RMT_SENT_RECEIVER(pin, tick_time_us) {
-    
-  }
-
-  uint16_t getRawAngle() {
-    return _raw_angle;
-  }
-
-  uint16_t getSerialStatus() {
-    return _serial_status;
-  }
-
-  uint32_t getMissedPackets() {
-    return _missed_packets;
-  }
-
-  float getTemperature() {
-    return _temperature;
-  }
-
-private:
-  bool processData() override {
-    uint8_t ct = _nibbles[3] << 4 | _nibbles[4];
-    _last_counter++;
-    if(!_packet_count) {
-      _last_counter = ct;
-    }
-    if(ct != _last_counter) {
-      _missed_packets += ct - _last_counter;
-      _last_counter = ct;
-      //Serial.printf("missed %d\r\n", ct);
-    }
-    if((~(_nibbles[0]) & 0x0f) != _nibbles[5]) {
-      //Serial.printf("wrong invert %d\r\n", ct);
-      return false;
-    }
-    _raw_angle = _nibbles[0] << 8 | _nibbles[1] << 4 | _nibbles[2];
-    return true;
-  }
-
-  bool processSerial(uint8_t msg_id, uint16_t msg_data) override {
-    switch(msg_id) {
-      case 1:
-        _serial_status = msg_data;
-        break;
-      case 0x23:
-        _temperature = msg_data / 8 - 73; // was 73.15, but seems to be only in 1° steps
-        break;
-    }
-    return true;
-  }
-
-  uint16_t _raw_angle;
-  uint8_t _last_counter;
-  uint32_t _missed_packets;
-  uint16_t _serial_status;
-  float _temperature;
 };
 
 #endif
