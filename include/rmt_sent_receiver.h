@@ -2,8 +2,7 @@
 #define RMT_SENT_RECEIVER_H
 
 #include <Arduino.h>
-#include <driver/rmt_common.h>
-#include <driver/rmt_rx.h>
+#include "rmt_includes.h"
 
 class RMT_SENT_RECEIVER {
 public:
