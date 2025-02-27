@@ -1,8 +1,10 @@
 #include "rmt_sent_receiver.h"
 
-RMT_SENT_RECEIVER::RMT_SENT_RECEIVER(gpio_num_t pin, uint8_t tick_time_us) : _tick_time_us(tick_time_us) {
+RMT_SENT_RECEIVER::RMT_SENT_RECEIVER(uint8_t pin, uint8_t tick_time_us) : _pin(pin), _tick_time_us(tick_time_us) {
+  
+#if ESP_ARDUINO_VERSION_MAJOR == 3
   _rx_chan_config = {
-    .gpio_num = pin,
+    .gpio_num = (gpio_num_t)pin,
     .clk_src = RMT_CLK_SRC_DEFAULT, // select source clock
     .resolution_hz = 1000000,
     .mem_block_symbols = RMT_MEM_NUM_BLOCKS_1 * RMT_SYMBOLS_PER_CHANNEL_BLOCK
@@ -19,9 +21,11 @@ RMT_SENT_RECEIVER::RMT_SENT_RECEIVER(gpio_num_t pin, uint8_t tick_time_us) : _ti
   _packet_count = 0;
   _error_count = 0;
   _serial_msg_bit3 = 0;
+#endif
 }
 
 bool RMT_SENT_RECEIVER::begin() {
+#if ESP_ARDUINO_VERSION_MAJOR == 3
   if(rmt_new_rx_channel(&_rx_chan_config, &_sent_chan) != ESP_OK) {
     Serial.println("init RTM chan failed\n");
     return false;
@@ -35,35 +39,67 @@ bool RMT_SENT_RECEIVER::begin() {
     Serial.printf("enable RTM chan failed: %d\n", ret);
     return false;
   }
-  _receive_queue = xQueueCreate(1, sizeof(rmt_rx_done_event_data_t));
+#else
+  if ((_rmt_receiver = rmtInit(_pin, RMT_RX_MODE, RMT_MEM_128)) == NULL) {
+    Serial.println("init rmt failed\n");
+    return false;
+  }
+  Serial.println("init rmt ok\n");
+  rmtSetTick(_rmt_receiver, 1000.0);
+  rmtSetRxThreshold(_rmt_receiver, _tick_time_us * 60); // more than 60 ticks is pause (end mark)
+  rmtSetFilter(_rmt_receiver, true, 255);
+#endif
+  _receive_queue = xQueueCreate(10, sizeof(rmt_rx_done_event_data_t));
   xTaskCreatePinnedToCore(&handlerThread, "sent_handler", 4000, this, 5, NULL, ARDUINO_RUNNING_CORE);
+  #if ESP_ARDUINO_VERSION_MAJOR == 3
   ret = rmt_receive(_sent_chan, _rmt_data, _rmt_symbols, &_sent_config);
   if(ret != ESP_OK) {
     Serial.printf("init RTM rec failed: %d\n", ret);
     return false;
   }
+  #else
+  rmtRead(_rmt_receiver, rtmCallback, this);
+  #endif
   return true;
 }
 
+int RMT_SENT_RECEIVER::getPin() {
+  return _pin;
+}
+
+#if ESP_ARDUINO_VERSION_MAJOR == 3
 IRAM_ATTR bool RMT_SENT_RECEIVER::rtmCallback(rmt_channel_handle_t rx_chan, const rmt_rx_done_event_data_t *edata, void *user_data) {
   BaseType_t high_task_wakeup = pdFALSE;
   RMT_SENT_RECEIVER* me = (RMT_SENT_RECEIVER*)user_data;
-  //QueueHandle_t receive_queue = (QueueHandle_t)user_data;
   xQueueSendFromISR(me->_receive_queue, edata, &high_task_wakeup);
   rmt_receive(me->_sent_chan, me->_rmt_data, me->_rmt_symbols, &me->_sent_config);
   return high_task_wakeup == pdTRUE;
 }
 
+#else
+
+IRAM_ATTR void RMT_SENT_RECEIVER::rtmCallback(uint32_t *data, size_t len, void *user_data) {
+  RMT_SENT_RECEIVER* me = (RMT_SENT_RECEIVER*)user_data;
+  BaseType_t high_task_wakeup = pdFALSE;
+  rmt_rx_done_event_data_t dt;
+  bcopy(data, dt.received_symbols, min(16, (int)len) * 4);
+  dt.num_symbols = len;
+  log_d("cb: %d", len);
+  if(len >= 10) {
+    xQueueSendFromISR(me->_receive_queue, &dt, &high_task_wakeup);
+  }
+}
+#endif
+
 void RMT_SENT_RECEIVER::handlerThread(void* parameters) {
   RMT_SENT_RECEIVER* me = (RMT_SENT_RECEIVER*)parameters;
-  rmt_rx_done_event_data_t rx_data;
   while(1) {
-    xQueueReceive(me->_receive_queue, &rx_data, portMAX_DELAY);
-    if(!me->decodeSENT(&rx_data)) {
+    rmt_rx_done_event_data_t dt;
+    xQueueReceive(me->_receive_queue, &dt, portMAX_DELAY);
+    if(!me->decodeSENT(&dt)) {
       me->_error_count++;
       me->_serial_msg_bit3 = 0;
     }
-    //vTaskDelay(0);
   }
 }
 
@@ -92,7 +128,11 @@ bool RMT_SENT_RECEIVER::checkCRC6(uint32_t data, uint8_t crc6) {
 }
 
 bool RMT_SENT_RECEIVER::decodeSENT(rmt_rx_done_event_data_t* rx_data) {
+  #if ESP_ARDUINO_VERSION_MAJOR == 3
   rmt_symbol_word_t* d = rx_data->received_symbols;
+  #else
+  rmt_data_t* d = rx_data->received_symbols;
+  #endif
   uint16_t ticks = round((float)(d->duration0 + d->duration1) / _tick_time_us);
   if(rx_data->num_symbols < 9) {
     _last_error = short_frame;

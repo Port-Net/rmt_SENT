@@ -2,7 +2,18 @@
 #define RMT_SENT_RECEIVER_H
 
 #include <Arduino.h>
-#include "rmt_includes.h"
+
+#if ESP_ARDUINO_VERSION_MAJOR == 3
+#include <driver/rmt_common.h>
+#include <driver/rmt_types.h>
+#include <driver/rmt_rx.h>
+#else
+#include <driver/rmt.h>
+typedef struct {
+  rmt_data_t received_symbols[16];
+  size_t num_symbols;
+} rmt_rx_done_event_data_t;
+#endif
 
 class RMT_SENT_RECEIVER {
 public:
@@ -19,7 +30,7 @@ public:
    * @param pin 
    * @param tick_time_us 
    */
-  RMT_SENT_RECEIVER(gpio_num_t pin, uint8_t tick_time_us);
+  RMT_SENT_RECEIVER(uint8_t pin, uint8_t tick_time_us);
 
   /**
    * @brief initialize and start rmt receiver
@@ -28,6 +39,8 @@ public:
    * @return false on error
    */
   bool begin();
+
+  int getPin();
 
   /**
    * @brief register a callback on frame decoded successful
@@ -101,20 +114,31 @@ protected:
   int8_t _nibbles[7];
   uint32_t _packet_count;
 private:
+  #if ESP_ARDUINO_VERSION_MAJOR == 3
   static IRAM_ATTR bool rtmCallback(rmt_channel_handle_t rx_chan, const rmt_rx_done_event_data_t *edata, void *user_data);
+  #else
+  static IRAM_ATTR void rtmCallback(uint32_t *data, size_t len, void *user_data);
+  #endif
   static void handlerThread(void* parameters);
   uint8_t calcCRC4(int8_t* nibbles, uint8_t len);
   bool checkCRC6(uint32_t data, uint8_t crc6);
   bool decodeSENT(rmt_rx_done_event_data_t* rx_data);
   bool handleSerialMsg(uint8_t nibble);
+  int _pin;
+#if ESP_ARDUINO_VERSION_MAJOR == 3
   rmt_channel_handle_t _sent_chan;
   rmt_rx_channel_config_t _rx_chan_config;
   rmt_receive_config_t _sent_config;
   rmt_data_t _rmt_data[RMT_MEM_NUM_BLOCKS_1 * RMT_SYMBOLS_PER_CHANNEL_BLOCK];
   size_t _rmt_symbols = RMT_MEM_NUM_BLOCKS_1 * RMT_SYMBOLS_PER_CHANNEL_BLOCK;
+  rmt_rx_event_callbacks_t _cbs;
+#else
+  rmt_obj_t* _rmt_receiver = NULL;
+  rmt_config_t _rx_config;
+#endif
+
   uint8_t _tick_time_us;
   QueueHandle_t _receive_queue;
-  rmt_rx_event_callbacks_t _cbs;
   uint32_t _serial_msg_bit3;
   uint32_t _serial_msg_bit2;
   uint32_t _serial_msg_crc;
