@@ -1,3 +1,11 @@
+//
+//    FILE: sent_receiver.cpp
+//  AUTHOR: Christian Port
+// PURPOSE: demo
+//     URL: https://github.com/Port-Net/rmt_SENT
+//
+//  Example for using callbacks for MLX90377ADB-x3x rotation sensor based on rmt_sent receiver
+
 #include <Arduino.h>
 #include "rmt_sent_receiver.h"
 

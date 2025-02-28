@@ -11,7 +11,7 @@ To use the class as base there are two methods which can be overrided:
 bool processData();
 bool processSerial(uint8_t msg_id, uint16_t msg_data);
 This methods have to return false if an error in the packet is detected, else true. The nibbles are available in _nibbles array.
-A class MLX90377 is included.
+There is an example included.
 
 To use the class by its own one can register callbacks for data and serial messages.
 registerDataCallback(dataCB [, void* user_data]);
