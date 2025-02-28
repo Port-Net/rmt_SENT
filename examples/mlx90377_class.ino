@@ -7,7 +7,7 @@
 //  Example for creating a class for MLX90377ADB-x3x rotation sensor based on rmt_sent receiver
 
 #include <Arduino.h>
-#include "rmt_sent_receiver.h"
+#include "rmt_SENT.h"
 
 class my_MLX90377 : public RMT_SENT_RECEIVER {
 public:

@@ -1,4 +1,4 @@
-#include "rmt_sent_receiver.h"
+#include "rmt_SENT.h"
 
 RMT_SENT_RECEIVER::RMT_SENT_RECEIVER(uint8_t pin, uint8_t tick_time_us) : _pin(pin), _tick_time_us(tick_time_us) {
   

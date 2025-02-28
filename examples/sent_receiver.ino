@@ -7,7 +7,7 @@
 //  Example for using callbacks for MLX90377ADB-x3x rotation sensor based on rmt_sent receiver
 
 #include <Arduino.h>
-#include "rmt_sent_receiver.h"
+#include "rmt_SENT.h"
 
 // MLX90377 magnetic position sensor
 
