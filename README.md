@@ -19,5 +19,6 @@ registerSerialMsgCallback(serialCB [, void* user_data]);
 callback signature:
 void dataCB(int8_t* nibbles, void* user_data)
 void serialCB(uint8_t msg_id, uint16_t msg_data, void* user_data)
+
 </pre>
 
