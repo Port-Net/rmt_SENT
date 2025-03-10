@@ -15,6 +15,11 @@ typedef struct {
 } rmt_rx_done_event_data_t;
 #endif
 
+typedef struct {
+  rmt_rx_done_event_data_t rmt_data;
+  uint32_t timestamp;
+} rmt_queue_item_t;
+
 class RMT_SENT_RECEIVER {
 public:
   enum SENT_Error_t {
@@ -43,12 +48,12 @@ public:
   int getPin();
 
   /**
-   * @brief register a callback on frame decoded successful
+   * @brief register a callback on frame decoded successful. timestamp is micros of queuing
    * 
-   * @param callback sig: void func(int8_t* nibbles, void* user_data)
+   * @param callback sig: void func(int8_t* nibbles, uint32_t timestamp, void* user_data)
    * @param user_data optional pointer forwarded to callback
    */
-  void registerDataCallback(void (*callback)(int8_t* nibbles, void* user_data), void* user_data = NULL);
+  void registerDataCallback(void (*callback)(int8_t* nibbles, uint32_t timestamp, void* user_data), void* user_data = NULL);
 
   /**
    * @brief register a callback on serial message received
@@ -102,8 +107,9 @@ protected:
   /**
    * @brief function which is called each time a valid packet is received
    * 
+   * @param timestamp micros the packet was received and queued
    */
-  virtual bool processData();
+  virtual bool processData(uint32_t timestamp);
 
   /**
    * @brief function which is called each time a valid serial message is received
@@ -115,14 +121,15 @@ protected:
   uint32_t _packet_count;
 private:
   #if ESP_ARDUINO_VERSION_MAJOR == 3
-  static IRAM_ATTR bool rtmCallback(rmt_channel_handle_t rx_chan, const rmt_rx_done_event_data_t *edata, void *user_data);
+  static IRAM_ATTR bool rmtCallback(rmt_channel_handle_t rx_chan, const rmt_rx_done_event_data_t *edata, void *user_data);
   #else
-  static IRAM_ATTR void rtmCallback(uint32_t *data, size_t len, void *user_data);
+  static IRAM_ATTR void rmtCallback(uint32_t *data, size_t len, void *user_data);
   #endif
-  static void handlerThread(void* parameters);
+  static void handlerThreadStarter(void* parameters);
+  void handlerThread();
   uint8_t calcCRC4(int8_t* nibbles, uint8_t len);
   bool checkCRC6(uint32_t data, uint8_t crc6);
-  bool decodeSENT(rmt_rx_done_event_data_t* rx_data);
+  bool decodeSENT(rmt_rx_done_event_data_t* rx_data, uint32_t timestamp);
   bool handleSerialMsg(uint8_t nibble);
   int _pin;
 #if ESP_ARDUINO_VERSION_MAJOR == 3
@@ -146,7 +153,7 @@ private:
   SENT_Error_t _last_error;
   uint32_t _error_count;
   void* _data_callback_user_data;
-  void (*_data_callback)(int8_t* nibbles, void* user_data);
+  void (*_data_callback)(int8_t* nibbles, uint32_t timestamp, void* user_data);
   void* _serial_callback_user_data;
   void (*_serial_msg_callback)(uint8_t msg_id, uint16_t msg_data, void* user_data);
 };

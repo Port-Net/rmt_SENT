@@ -32,7 +32,7 @@ public:
   }
 
 private:
-  bool processData() override {
+  bool processData(uint32_t timestamp) override {
     uint8_t ct = _nibbles[3] << 4 | _nibbles[4];
     _last_counter++;
     if(ct != _last_counter) {

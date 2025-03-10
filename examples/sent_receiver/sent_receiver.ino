@@ -20,7 +20,7 @@ uint16_t serial_status = 0;
 float temp = 0;
 uint32_t missed_packets = 0;
 
-void dataCallback(int8_t* nibbles, void* userData) {
+void dataCallback(int8_t* nibbles, uint32_t timestamp, void* userData) {
   uint8_t ct = nibbles[3] << 4 | nibbles[4];
   last_counter++;
   if(ct != last_counter) {

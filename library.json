@@ -1,6 +1,6 @@
 {
   "name": "rmt_SENT",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Library to receive SENT telegrams via esp32 RMT",
   "keywords": "SENT RMT J2716",
   "repository": {
