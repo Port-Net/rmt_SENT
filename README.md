@@ -8,7 +8,7 @@ frames via rmt hardware on ESP32.
 It works only with pause pulse which is longer than 60 ticks which is used as end marker.
 
 To use the class as base there are two methods which can be overrided:
-bool processData();
+bool processData(uint32_t timestamp);
 bool processSerial(uint8_t msg_id, uint16_t msg_data);
 This methods have to return false if an error in the packet is detected, else true. The nibbles are available in _nibbles array.
 There is an example included.
@@ -17,7 +17,7 @@ To use the class by its own one can register callbacks for data and serial messa
 registerDataCallback(dataCB [, void* user_data]);
 registerSerialMsgCallback(serialCB [, void* user_data]);
 callback signature:
-void dataCB(int8_t* nibbles, void* user_data)
+void dataCB(int8_t* nibbles, uint32_t timestamp, void* user_data)
 void serialCB(uint8_t msg_id, uint16_t msg_data, void* user_data)
 
 </pre>
