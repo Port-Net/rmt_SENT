@@ -1,3 +1,10 @@
+//
+//    FILE: rmt_SENT.h
+//  AUTHOR: Chrisrian Port
+// VERSION: 0.3.2
+// PURPOSE: Arduino library for receiving SENT (Single Edge Nibble Transmission) frames via RMT
+//    DATE: 2025-03-13
+
 #ifndef RMT_SENT_RECEIVER_H
 #define RMT_SENT_RECEIVER_H
 

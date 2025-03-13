@@ -20,5 +20,6 @@ callback signature:
 void dataCB(int8_t* nibbles, uint32_t timestamp, void* user_data)
 void serialCB(uint8_t msg_id, uint16_t msg_data, void* user_data)
 
+The timestamp should be near the starting of the frame received. 
 </pre>
 

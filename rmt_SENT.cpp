@@ -1,3 +1,10 @@
+//
+//    FILE: rmt_SENT.cpp
+//  AUTHOR: Chrisrian Port
+// VERSION: 0.3.2
+// PURPOSE: Arduino library for receiving SENT (Single Edge Nibble Transmission) frames via RMT
+//    DATE: 2025-03-13
+
 #include "rmt_SENT.h"
 
 RMT_SENT_RECEIVER::RMT_SENT_RECEIVER(uint8_t pin, uint8_t tick_time_us) : _pin(pin), _tick_time_us(tick_time_us) {
@@ -142,6 +149,7 @@ bool RMT_SENT_RECEIVER::decodeSENT(rmt_rx_done_event_data_t* rx_data, uint32_t t
   #else
   rmt_data_t* d = rx_data->received_symbols;
   #endif
+  uint16_t frame_len = d->duration0 + d->duration1;
   uint16_t ticks = round((float)(d->duration0 + d->duration1) / _tick_time_us);
   if(rx_data->num_symbols < 9) {
     _last_error = short_frame;
@@ -155,6 +163,7 @@ bool RMT_SENT_RECEIVER::decodeSENT(rmt_rx_done_event_data_t* rx_data, uint32_t t
   }
 
   d = &(rx_data->received_symbols[1]);
+  frame_len += d->duration0 + d->duration1;
   _status = round((float)(d->duration0 + d->duration1) / _tick_time_us) - 12;
   if((_status < 0) || (_status > 15)) {
     _last_error = wrong_nibble;
@@ -164,12 +173,17 @@ bool RMT_SENT_RECEIVER::decodeSENT(rmt_rx_done_event_data_t* rx_data, uint32_t t
 
   for(int i = 0; i < 7; ++i) {
     d = &(rx_data->received_symbols[i + 2]);
+    frame_len += d->duration0 + d->duration1;
     _nibbles[i] = round((float)(d->duration0 + d->duration1) / _tick_time_us) - 12;
     if((_nibbles[i] < 0) || (_nibbles[i] > 15)) {
       _last_error = wrong_nibble;
       //Serial.println("wrong nibble");
       return false;
     }
+  }
+  for(int i = 7; i < rx_data->num_symbols; ++i) {
+    d = &(rx_data->received_symbols[i + 2]);
+    frame_len += d->duration0 + d->duration1;
   }
 
   if(calcCRC4(_nibbles, 6) != _nibbles[6]) {
@@ -178,13 +192,13 @@ bool RMT_SENT_RECEIVER::decodeSENT(rmt_rx_done_event_data_t* rx_data, uint32_t t
     return false;
   }
 
-  if(!processData(timestamp)) {
+  if(!processData(timestamp - frame_len)) {
     _last_error = process_error;
     return false;
   }
 
   if(_data_callback) {
-    _data_callback(_nibbles, timestamp, _data_callback_user_data);
+    _data_callback(_nibbles, timestamp - frame_len, _data_callback_user_data);
   }
 
   _packet_count++;
