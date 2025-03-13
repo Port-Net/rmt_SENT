@@ -181,10 +181,6 @@ bool RMT_SENT_RECEIVER::decodeSENT(rmt_rx_done_event_data_t* rx_data, uint32_t t
       return false;
     }
   }
-  for(int i = 7; i < rx_data->num_symbols; ++i) {
-    d = &(rx_data->received_symbols[i + 2]);
-    frame_len += d->duration0 + d->duration1;
-  }
 
   if(calcCRC4(_nibbles, 6) != _nibbles[6]) {
     _last_error = wrong_crc;
